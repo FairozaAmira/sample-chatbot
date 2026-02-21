@@ -13,6 +13,9 @@ WORKDIR /app
 
 RUN pip install --upgrade pip uv
 
+# Install CPU-only torch first to prevent CUDA variants
+RUN pip install torch==2.2.2+cpu --index-url https://download.pytorch.org/whl/cpu
+
 COPY pyproject.toml README.md ./
 COPY utils ./utils
 COPY controllers ./controllers
