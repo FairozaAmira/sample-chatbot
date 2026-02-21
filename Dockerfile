@@ -1,10 +1,13 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.10-slim AS builder
+FROM python:3.10.11-slim AS builder
 
 ENV POETRY_VIRTUALENVS_CREATE=false \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    TORCH_CUDA_ARCH_LIST="" \
+    CUDA_VISIBLE_DEVICES="" \
+    FORCE_CPU="1"
 
 WORKDIR /app
 
@@ -19,10 +22,13 @@ COPY tests ./tests
 
 RUN uv pip install --system .
 
-FROM python:3.10-slim AS runtime
+FROM python:3.10.11-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    TORCH_CUDA_ARCH_LIST="" \
+    CUDA_VISIBLE_DEVICES="" \
+    FORCE_CPU="1"
 
 WORKDIR /app
 
