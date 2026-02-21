@@ -71,6 +71,11 @@ Key highlights:
 ├── controllers/        # Request orchestration logic
 ├── routers/            # FastAPI routers for each endpoint
 ├── utils/              # Config, RAG, ingestion, evaluation, embeddings, etc.
+├── data/
+│   ├── knowledge/      # Sample knowledge base markdown
+│   ├── tender/         # Tender drafting guidance
+│   ├── finance/        # Financial FAQs (CSV)
+│   └── web_samples/    # Mock website HTML pages for crawler demo
 ├── tests/              # Pytest suite covering API flows
 ├── main.py             # FastAPI application factory
 ├── pyproject.toml      # Project dependencies and build metadata
@@ -166,7 +171,29 @@ Kicks off the ingestion pipeline.
 }
 ```
 
-Response includes documents indexed, QA pairs generated, and metadata with request ID and processing time.
+Response includes documents indexed, QA pairs generated, and metadata with:
+- `id`
+- `createdAt`
+- `timeTaken`
+- `apiCost`
+
+```json
+{
+  "id": "req_f3c90b4d5a2e4f0fbf7b33d01b7b2f41",
+  "createdAt": "2026-02-21T07:30:00.000000+00:00",
+  "timeTaken": 215.37,
+  "apiCost": null,
+  "cost": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "estimated_cost_usd": 0.0
+  },
+  "documents_indexed": 6,
+  "qa_pairs_generated": 6,
+  "qa_output_path": "generated_qa/qa_pairs_20260221T073000Z.json"
+}
+```
 
 ### `POST /api/chatbot`
 Retrieves an answer with citations from the RAG system.
@@ -183,7 +210,38 @@ Returns a structure containing:
 - `answer`
 - `citations` (file path, snippet, optional score)
 - `cost` estimation (token counts, USD estimate)
-- `id`, `created_at`, `processing_time_ms`
+- `id`
+- `createdAt`
+- `timeTaken`
+- `apiCost`
+
+```json
+{
+  "id": "req_0b9ad3c6f1c8428ab6d7098a994c1df3",
+  "createdAt": "2026-02-21T07:31:12.120000+00:00",
+  "timeTaken": 342.58,
+  "apiCost": 0.0012,
+  "cost": {
+    "input_tokens": 180,
+    "output_tokens": 220,
+    "total_tokens": 400,
+    "estimated_cost_usd": 0.0012
+  },
+  "answer": "Tender drafting should highlight compliance with Policy A, including CFO approval for spends above USD 10,000...",
+  "citations": [
+    {
+      "source": "data/tender/tender_drafting_guide.md",
+      "snippet": "Tender drafting should highlight compliance with policy A...",
+      "score": 0.87
+    },
+    {
+      "source": "data/web_samples/tender_hub.html",
+      "snippet": "Include a compliance matrix referencing Policy A approval checkpoints...",
+      "score": 0.79
+    }
+  ]
+}
+```
 
 ### `POST /api/evaluation`
 Evaluates a question/answer pair against ground-truth references.
@@ -196,7 +254,37 @@ Evaluates a question/answer pair against ground-truth references.
 }
 ```
 
-Responds with per-metric scores (reference overlap, question coverage, or deepeval metrics) plus an average.
+Responds with per-metric scores (reference overlap, question coverage, or deepeval metrics) plus an average. Metadata fields include `id`, `createdAt`, `timeTaken`, and `apiCost`.
+
+```json
+{
+  "id": "req_58f921de4b7a4a6693f1f4a7a4cd9151",
+  "createdAt": "2026-02-21T07:32:05.450000+00:00",
+  "timeTaken": 129.44,
+  "apiCost": null,
+  "cost": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "estimated_cost_usd": 0.0
+  },
+  "metrics": [
+    {
+      "metric": "ReferenceOverlap",
+      "score": 0.82,
+      "passed": true,
+      "feedback": "Checks for hallucination via reference overlap."
+    },
+    {
+      "metric": "QuestionCoverage",
+      "score": 0.74,
+      "passed": true,
+      "feedback": "Ensures answer addresses major terms in the question."
+    }
+  ],
+  "average_score": 0.78
+}
+```
 
 ---
 

@@ -24,7 +24,8 @@ dependencies = [
     "pandas>=2.1",
     "numpy>=1.24",
     "sentence-transformers>=2.2",
-    "pypdf>=3.9"
+    "pypdf>=3.9",
+    "beautifulsoup4>=4.12"
 ]
 
 [project.optional-dependencies]

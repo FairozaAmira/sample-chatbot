@@ -15,6 +15,7 @@ import pandas as pd
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
+from bs4 import BeautifulSoup
 
 from .config import Settings, get_settings
 from .identifiers import generate_request_id
@@ -45,7 +46,7 @@ class CrawlSummary:
 
 
 class DataCrawler:
-    """Crawls local data sources, builds the vector index, and generates QA pairs."""
+    """Crawls local data sources, optional sample websites, and generates QA pairs."""
 
     SUPPORTED_SUFFIXES = {
         ".txt",
@@ -55,6 +56,12 @@ class DataCrawler:
         ".pdf",
         ".eml",
         ".log",
+    }
+
+    SAMPLE_WEBSITE_FILES = {
+        "knowledge": "policy_portal.html",
+        "tender": "tender_hub.html",
+        "finance": "finance_updates.html",
     }
 
     def __init__(self, settings: Settings | None = None) -> None:
@@ -70,6 +77,7 @@ class DataCrawler:
             self._reset_vector_store()
 
         raw_documents = list(self._load_documents())
+        raw_documents.extend(self._load_sample_websites())
         LOGGER.info("Loaded %d raw documents from %s", len(raw_documents), self.settings.data_directory)
 
         chunked_documents = self._split_documents(raw_documents)
@@ -177,6 +185,42 @@ class DataCrawler:
 
         LOGGER.debug("Skipping unsupported file: %s", path)
         return []
+
+    def _load_sample_websites(self) -> List[Document]:
+        """Fetch sample web pages to demonstrate external data ingestion."""
+
+        documents: List[Document] = []
+        sample_directory = self.settings.data_directory / "web_samples"
+        sample_directory.mkdir(parents=True, exist_ok=True)
+
+        for domain, file_name in self.SAMPLE_WEBSITE_FILES.items():
+            html_path = sample_directory / file_name
+            if not html_path.exists():
+                LOGGER.debug("Sample website file missing for domain %s: %s", domain, html_path)
+                continue
+
+            try:
+                html_text = html_path.read_text(encoding="utf-8")
+            except OSError as exc:
+                LOGGER.warning("Unable to read sample website %s: %s", html_path, exc)
+                continue
+
+            soup = BeautifulSoup(html_text, "html.parser")
+            text = soup.get_text(separator="\n")
+            if not text.strip():
+                continue
+
+            metadata = {
+                "id": generate_request_id(),
+                "source": str(html_path.resolve()),
+                "file_name": file_name,
+                "file_type": "html",
+                "domain": domain,
+                "ingested_at": datetime.now(timezone.utc).isoformat(),
+                "type": "web_sample",
+            }
+            documents.append(Document(page_content=text, metadata=metadata))
+        return documents
 
     def _split_documents(self, documents: Iterable[Document]) -> List[Document]:
         chunks: List[Document] = []

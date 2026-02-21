@@ -39,7 +39,11 @@ class BaseAPIResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     id: str = Field(..., description="Primary key identifier for the response")
-    created_at: datetime = Field(..., description="UTC timestamp when the response was generated")
+    created_at: datetime = Field(
+        ...,
+        alias="createdAt",
+        description="UTC timestamp when the response was generated",
+    )
     time_taken_ms: float = Field(
         ...,
         alias="timeTaken",
