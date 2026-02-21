@@ -20,6 +20,14 @@ class Settings(BaseSettings):
         description="API key for the primary language model provider.",
     )
     llm_model: str = Field(default="gpt5-mini", description="Default LLM model identifier.")
+    llm_provider: str = Field(
+        default="placeholder",
+        description="LLM provider to use: placeholder, openai, or ollama.",
+    )
+    ollama_base_url: str = Field(
+        default="http://127.0.0.1:11434",
+        description="Base URL for a local Ollama server.",
+    )
     llm_cost_per_1k_tokens: float = Field(
         default=0.0,
         description="Estimated USD cost per 1,000 tokens for the configured LLM.",

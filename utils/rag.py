@@ -8,7 +8,6 @@ from typing import List
 
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
-from langchain_core.retrievers import BaseRetriever
 
 from .config import get_settings
 from .costs import estimate_cost
@@ -42,28 +41,6 @@ class RetrievedContext:
     documents: List[Document]
 
 
-class DomainAwareRetriever(BaseRetriever):
-    """Retriever that filters documents by requested domain before returning results."""
-
-    def __init__(self, base_retriever: BaseRetriever, domain: ChatDomain) -> None:
-        object.__setattr__(self, "_base_retriever", base_retriever)
-        object.__setattr__(self, "_domain", domain)
-
-    def get_relevant_documents(self, query: str) -> List[Document]:  # type: ignore[override]
-        candidates = self._base_retriever.get_relevant_documents(query)
-        filtered = [doc for doc in candidates if doc.metadata.get("domain") == self._domain.value]
-        if filtered:
-            return filtered
-        return candidates
-
-    async def aget_relevant_documents(self, query: str) -> List[Document]:  # type: ignore[override]
-        candidates = await self._base_retriever.aget_relevant_documents(query)
-        filtered = [doc for doc in candidates if doc.metadata.get("domain") == self._domain.value]
-        if filtered:
-            return filtered
-        return candidates
-
-
 class RAGPipeline:
     """High-level interface for answering questions using RAG."""
 
@@ -73,14 +50,18 @@ class RAGPipeline:
 
     def _build_chain(self, domain: ChatDomain, top_k: int):
         vector_store = get_vector_store()
-        retriever = DomainAwareRetriever(vector_store.as_retriever(search_kwargs={"k": top_k}), domain)
+        # Retrieve a larger candidate set, then apply domain filtering in-process.
+        candidate_k = max(top_k * 4, top_k)
+        retriever = vector_store.as_retriever(search_kwargs={"k": candidate_k})
         return retriever
 
     def answer(self, query: str, domain: ChatDomain, top_k: int) -> ChatbotResponse:
         with track_duration() as elapsed_ms:
             retriever = self._build_chain(domain, top_k)
             LOGGER.info("Retrieving documents for query: %s", query)
-            documents = retriever.invoke(query)[:top_k]
+            candidates = retriever.invoke(query)
+            filtered_documents = [doc for doc in candidates if doc.metadata.get("domain") == domain.value]
+            documents = (filtered_documents or candidates)[:top_k]
             context = "\n\n".join(doc.page_content for doc in documents if doc.page_content)
             prompt_text = ANSWER_PROMPT.format(context=context, question=query)
             LOGGER.info("Invoking LLM for query: %s", query)

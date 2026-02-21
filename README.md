@@ -95,7 +95,8 @@ Local knowledge sources should be placed under `data/` (auto-created on first ru
 - Git (for cloning and running CI locally)
 
 Optional (for full-featured evaluation and LLM responses):
-- Access to a GPT-compatible model (e.g., OpenAI) and API key.
+- Access to a GPT-compatible model (e.g., OpenAI) and API key, **or**
+- A local open-source model server via [Ollama](https://ollama.com/) (no API key required).
 
 ---
 
@@ -111,8 +112,10 @@ CHATBOT_APP_NAME="Enterprise RAG Chatbot"
 CHATBOT_APP_ENV="development"
 
 # LLM configuration
-CHATBOT_LLM_API_KEY="sk-xxx"     # GPT key or equivalent
-CHATBOT_LLM_MODEL="gpt5-mini"    # Default fallback model identifier
+CHATBOT_LLM_PROVIDER="placeholder" # placeholder | openai | ollama
+CHATBOT_LLM_API_KEY="sk-xxx"      # Required for openai provider
+CHATBOT_LLM_MODEL="gpt5-mini"     # e.g. gpt-4o-mini (openai) or llama3.2 (ollama)
+CHATBOT_OLLAMA_BASE_URL="http://127.0.0.1:11434"
 CHATBOT_LLM_COST_PER_1K_TOKENS=0.002  # Optional cost estimation
 CHATBOT_ENABLE_DEEPEVAL=true          # Enable deepeval metrics when API key is present
 
@@ -122,7 +125,11 @@ CHATBOT_DATA_DIRECTORY=data
 CHATBOT_QA_CACHE_DIRECTORY=generated_qa
 ```
 
-> **Note:** If you do not supply `CHATBOT_LLM_API_KEY`, the application uses a deterministic placeholder LLM and heuristic evaluation, allowing the stack to run fully offline.
+> **Note:** If `CHATBOT_LLM_PROVIDER=ollama`, the app uses your local open-source model endpoint and does not require `CHATBOT_LLM_API_KEY`.
+>
+> If no provider is configured, the application uses a deterministic placeholder LLM and heuristic evaluation, allowing the stack to run fully offline.
+>
+> `.env.uat` and `.env.production` are committed as deployment templates for CI/CD. Keep real credentials out of these files (use GitHub Environment secrets for sensitive values).
 
 ---
 
@@ -319,7 +326,27 @@ docker build -t enterprise-chatbot .
 docker run -p 8000:8000 --env-file .env enterprise-chatbot
 ```
 
-The container installs dependencies with `uv`, bundles the application code, and starts Uvicorn on port 8000.
+The container installs dependencies, bundles the application code, and starts Uvicorn on port 8000.
+
+If you want open-source inference without GPT keys, run with Ollama mode enabled:
+
+```bash
+docker run \
+  -p 8000:8000 \
+  -p 11434:11434 \
+  -e CHATBOT_LLM_PROVIDER=ollama \
+  -e CHATBOT_LLM_MODEL=llama3.2 \
+  -e CHATBOT_OLLAMA_BASE_URL=http://127.0.0.1:11434 \
+  enterprise-chatbot
+```
+
+In Ollama mode, container startup will:
+- start the local Ollama server,
+- pull `CHATBOT_LLM_MODEL` (for example `llama3.2`),
+- then start the FastAPI app.
+
+> **CI note:** Pulling an Ollama model can significantly increase startup time on first run.
+> For CI pipelines, prefer `CHATBOT_LLM_PROVIDER=placeholder` (or a pre-warmed/cached Ollama setup) to keep test jobs fast and deterministic.
 
 ---
 

@@ -42,12 +42,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Load UAT environment file
+        run: |
+          test -f .env.uat || (echo "Missing .env.uat" && exit 1)
+          cp .env.uat .env
+
       - name: Build Docker image for UAT
         run: |
           docker build -t enterprise-chatbot:${{ github.ref_name }} .
 
       - name: Sample UAT deployment
         run: |
+          echo "Using environment file: .env.uat"
           echo "Deploying to UAT with tag ${{ github.ref_name }}"
           echo "Example tag format: 0.0.1-uat"
 
@@ -62,11 +68,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Load production environment file
+        run: |
+          test -f .env.production || (echo "Missing .env.production" && exit 1)
+          cp .env.production .env
+
       - name: Build Docker image for Production
         run: |
           docker build -t enterprise-chatbot:${{ github.ref_name }} .
 
       - name: Sample production deployment
         run: |
+          echo "Using environment file: .env.production"
           echo "Deploying to Production with tag ${{ github.ref_name }}"
           echo "Example tag format: 0.0.1-prod"
