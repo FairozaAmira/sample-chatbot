@@ -1,0 +1,102 @@
+"""Core Retrieval-Augmented Generation pipeline orchestration."""
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import List
+
+from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate
+
+from .config import get_settings
+from .costs import estimate_cost
+from .identifiers import generate_request_id
+from .llm import get_llm
+from .schemas import ChatbotResponse, Citation, ChatDomain, CostBreakdown
+from .timing import track_duration
+from .vectorstore import get_vector_store
+
+LOGGER = logging.getLogger(__name__)
+
+ANSWER_PROMPT = PromptTemplate.from_template(
+    (
+        "You are an enterprise compliance and procurement assistant. "
+        "You must strictly answer using the given context.\n\n"
+        "Context:\n{context}\n\n"
+        "User question: {question}\n"
+        "Guidelines:\n"
+        "- Quote relevant facts from the context and cite their source IDs.\n"
+        "- If the answer is unavailable, respond with 'I'm unable to locate that information in the current knowledge base.'\n"
+        "- Maintain professional, concise tone."
+    )
+)
+
+
+@dataclass
+class RetrievedContext:
+    """Wrapper containing retrieved documents and the generated answer."""
+
+    answer: str
+    documents: List[Document]
+
+
+class RAGPipeline:
+    """High-level interface for answering questions using RAG."""
+
+    def __init__(self) -> None:
+        self.settings = get_settings()
+        self.llm = get_llm()
+
+    def _build_chain(self, domain: ChatDomain, top_k: int):
+        vector_store = get_vector_store()
+        # Retrieve a larger candidate set, then apply domain filtering in-process.
+        candidate_k = max(top_k * 4, top_k)
+        retriever = vector_store.as_retriever(search_kwargs={"k": candidate_k})
+        return retriever
+
+    def answer(self, query: str, domain: ChatDomain, top_k: int) -> ChatbotResponse:
+        with track_duration() as elapsed_ms:
+            retriever = self._build_chain(domain, top_k)
+            LOGGER.info("Retrieving documents for query: %s", query)
+            candidates = retriever.invoke(query)
+            filtered_documents = [doc for doc in candidates if doc.metadata.get("domain") == domain.value]
+            documents = (filtered_documents or candidates)[:top_k]
+            context = "\n\n".join(doc.page_content for doc in documents if doc.page_content)
+            prompt_text = ANSWER_PROMPT.format(context=context, question=query)
+            LOGGER.info("Invoking LLM for query: %s", query)
+            answer = self.llm.invoke(prompt_text)
+            # Ensure answer is string
+            if hasattr(answer, "content"):
+                answer = answer.content
+            else:
+                answer = str(answer)
+
+        citations = [
+            Citation(
+                source=doc.metadata.get("source", "unknown"),
+                snippet=(doc.page_content or "")[:400],
+                score=doc.metadata.get("score"),
+            )
+            for doc in documents
+        ]
+        cost_breakdown = CostBreakdown()
+        api_cost = None
+        if self.settings.llm_api_key:
+            estimate = estimate_cost(query, answer, rate_per_1k=self.settings.llm_cost_per_1k_tokens)
+            cost_breakdown = CostBreakdown(**estimate.__dict__)
+            api_cost = estimate.estimated_cost_usd
+
+        response = ChatbotResponse(
+            id=generate_request_id(),
+            created_at=datetime.now(timezone.utc),
+            time_taken_ms=elapsed_ms(),
+            api_cost=api_cost,
+            cost=cost_breakdown,
+            answer=answer.strip(),
+            citations=citations,
+        )
+        return response
+
+
+__all__ = ["RAGPipeline"]
