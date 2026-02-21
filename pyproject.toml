@@ -43,3 +43,9 @@ dev-dependencies = [
     "pytest-asyncio>=0.21",
     "httpx>=0.25"
 ]
+
+[tool.setuptools.packages.find]
+include = ["sample_chatbot*"]
+
+[tool.setuptools.package-data]
+sample_chatbot = ["py.typed"]
