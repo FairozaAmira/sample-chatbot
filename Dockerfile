@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.10.11-slim AS builder
+FROM python:3.10-slim-bookworm AS builder
 
 ENV POETRY_VIRTUALENVS_CREATE=false \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -12,10 +12,6 @@ ENV POETRY_VIRTUALENVS_CREATE=false \
     HF_DATASETS_CACHE=/tmp/datasets_cache
 
 WORKDIR /app
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libsqlite3-dev \
-    && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip uv
 
@@ -32,7 +28,7 @@ RUN pip3 install --no-cache-dir -e .
 # Force CPU-only torch wheel
 RUN pip3 install --no-cache-dir --upgrade --force-reinstall torch --index-url https://download.pytorch.org/whl/cpu
 
-FROM python:3.10.11-slim AS runtime
+FROM python:3.10-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

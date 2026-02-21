@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Enterprise-ready RAG chatbot with evaluation and data ingestion capabilities"
 authors = [{ name = "Fairoza Amira" }]
 readme = "README.md"
-requires-python = "==3.10.11"
+requires-python = ">=3.10,<3.11"
 dependencies = [
     "fastapi==0.109.2",
     "uvicorn[standard]==0.25.0",
@@ -18,7 +18,6 @@ dependencies = [
     "langchain-experimental==0.0.55",
     "langchain-openai==0.1.7",
     "chromadb==0.5.0",
-    "pysqlite3==0.5.3; platform_system == 'Linux'",
     "pydantic==2.6.4",
     "pydantic-settings==2.2.1",
     "python-dotenv==1.0.1",
