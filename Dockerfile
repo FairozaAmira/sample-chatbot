@@ -13,9 +13,6 @@ WORKDIR /app
 
 RUN pip install --upgrade pip uv
 
-# Install CPU-only torch first to prevent CUDA variants
-RUN pip install torch==2.2.2+cpu --index-url https://download.pytorch.org/whl/cpu
-
 COPY pyproject.toml README.md ./
 COPY utils ./utils
 COPY controllers ./controllers
@@ -23,7 +20,11 @@ COPY routers ./routers
 COPY main.py ./main.py
 COPY tests ./tests
 
-RUN uv pip install --system . --index-url https://download.pytorch.org/whl/cpu
+# Install base dependencies from PyPI
+RUN uv pip install --system .
+
+# Ensure CPU-only torch
+RUN pip3 install torch --index-url https://download.pytorch.org/whl/cpu
 
 FROM python:3.10.11-slim AS runtime
 
