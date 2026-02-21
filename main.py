@@ -2,7 +2,17 @@
 from __future__ import annotations
 
 import logging
+import os
 from functools import lru_cache
+
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+
+try:
+    import chromadb.telemetry.product.posthog as _chroma_ph_module
+
+    _chroma_ph_module.posthog.capture = lambda *_a, **_kw: None  # type: ignore[attr-defined]
+except Exception:
+    pass
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse

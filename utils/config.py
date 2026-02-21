@@ -28,6 +28,10 @@ class Settings(BaseSettings):
         default="http://127.0.0.1:11434",
         description="Base URL for a local Ollama server.",
     )
+    ollama_timeout_seconds: float = Field(
+        default=300.0,
+        description="HTTP timeout for Ollama generation requests.",
+    )
     llm_cost_per_1k_tokens: float = Field(
         default=0.0,
         description="Estimated USD cost per 1,000 tokens for the configured LLM.",

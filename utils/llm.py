@@ -46,7 +46,7 @@ class OllamaLLM(LLM):
 
     model_name: str = "llama3.2"
     base_url: str = "http://127.0.0.1:11434"
-    timeout_seconds: float = 60.0
+    timeout_seconds: float = 300.0
 
     @property
     def _llm_type(self) -> str:  # type: ignore[override]
@@ -90,7 +90,11 @@ def get_llm() -> LLM:
 
     if provider == "ollama":
         LOGGER.info("Using Ollama provider at %s with model %s", settings.ollama_base_url, settings.llm_model)
-        return OllamaLLM(model_name=settings.llm_model, base_url=settings.ollama_base_url)
+        return OllamaLLM(
+            model_name=settings.llm_model,
+            base_url=settings.ollama_base_url,
+            timeout_seconds=settings.ollama_timeout_seconds,
+        )
 
     if settings.llm_api_key:
         try:

@@ -119,10 +119,14 @@ CHATBOT_LLM_API_KEY="sk-xxx"
 # e.g. gpt-4o-mini (openai) or llama3.2 (ollama)
 CHATBOT_LLM_MODEL="gpt5-mini"
 CHATBOT_OLLAMA_BASE_URL="http://127.0.0.1:11434"
+CHATBOT_OLLAMA_TIMEOUT_SECONDS=300
 # Optional cost estimation
 CHATBOT_LLM_COST_PER_1K_TOKENS=0.002
 # Enable deepeval metrics when API key is present
 CHATBOT_ENABLE_DEEPEVAL=true
+
+# Chroma telemetry
+ANONYMIZED_TELEMETRY=False
 
 # Storage locations (override if needed)
 CHATBOT_CHROMA_PERSIST_DIRECTORY=.chroma_store
@@ -343,6 +347,7 @@ docker run -it --rm \
   -e CHATBOT_LLM_PROVIDER=ollama \
   -e CHATBOT_LLM_MODEL=llama3.2 \
   -e CHATBOT_OLLAMA_BASE_URL=http://127.0.0.1:11434 \
+  -e CHATBOT_OLLAMA_TIMEOUT_SECONDS=600 \
   enterprise-chatbot:latest
 ```
 
