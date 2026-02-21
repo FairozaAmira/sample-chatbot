@@ -77,6 +77,10 @@ class CrawlRequest(BaseModel):
 
     refresh_index: bool = Field(default=True, description="Whether to rebuild the index from scratch")
     max_qas_per_document: int = Field(default=2, ge=0, le=10)
+    website_urls: List[str] = Field(
+        default_factory=list,
+        description="Optional external website URLs to crawl into the knowledge base.",
+    )
 
 
 class CrawlResponse(BaseAPIResponse):

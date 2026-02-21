@@ -18,6 +18,7 @@ def handle_crawl_request(payload: CrawlRequest) -> CrawlResponse:
         summary = _crawler.run(
             refresh_index=payload.refresh_index,
             max_qas_per_document=payload.max_qas_per_document,
+            website_urls=payload.website_urls,
         )
 
     return CrawlResponse(

@@ -167,7 +167,12 @@ Kicks off the ingestion pipeline.
 ```json
 {
   "refresh_index": true,
-  "max_qas_per_document": 2
+  "max_qas_per_document": 2,
+  "website_urls": [
+    "https://www.iso.org/about-us.html",
+    "https://support.microsoft.com/en-us/topic/purchase-approval-policy-sample-1234567890",
+    "https://www.un.org/en/about-us"
+  ]
 }
 ```
 
@@ -194,6 +199,8 @@ Response includes documents indexed, QA pairs generated, and metadata with:
   "qa_output_path": "generated_qa/qa_pairs_20260221T073000Z.json"
 }
 ```
+
+> ℹ️ **Tip:** The listed URLs are public pages with stable text content, making them suitable demos for external website ingestion.
 
 ### `POST /api/chatbot`
 Retrieves an answer with citations from the RAG system.

@@ -9,13 +9,14 @@ from datetime import datetime, timezone
 from email import policy
 from email.parser import BytesParser
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Sequence
 
 import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
-from bs4 import BeautifulSoup
 
 from .config import Settings, get_settings
 from .identifiers import generate_request_id
@@ -69,7 +70,12 @@ class DataCrawler:
         self.llm = get_llm()
         self.splitter = RecursiveCharacterTextSplitter(chunk_size=900, chunk_overlap=120)
 
-    def run(self, refresh_index: bool, max_qas_per_document: int) -> CrawlSummary:
+    def run(
+        self,
+        refresh_index: bool,
+        max_qas_per_document: int,
+        website_urls: Sequence[str] | None = None,
+    ) -> CrawlSummary:
         """Execute the end-to-end ingestion workflow."""
 
         LOGGER.info("Starting crawl: refresh_index=%s, max_qas=%s", refresh_index, max_qas_per_document)
@@ -78,6 +84,7 @@ class DataCrawler:
 
         raw_documents = list(self._load_documents())
         raw_documents.extend(self._load_sample_websites())
+        raw_documents.extend(self._fetch_external_websites(website_urls or []))
         LOGGER.info("Loaded %d raw documents from %s", len(raw_documents), self.settings.data_directory)
 
         chunked_documents = self._split_documents(raw_documents)
@@ -218,6 +225,38 @@ class DataCrawler:
                 "domain": domain,
                 "ingested_at": datetime.now(timezone.utc).isoformat(),
                 "type": "web_sample",
+            }
+            documents.append(Document(page_content=text, metadata=metadata))
+        return documents
+
+    def _fetch_external_websites(self, urls: Sequence[str]) -> List[Document]:
+        documents: List[Document] = []
+        if not urls:
+            return documents
+
+        for url in urls:
+            try:
+                LOGGER.info("Fetching external website: %s", url)
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+            except requests.RequestException as exc:
+                LOGGER.warning("Skipping website %s due to error: %s", url, exc)
+                continue
+
+            soup = BeautifulSoup(response.text, "html.parser")
+            text = soup.get_text(separator="\n")
+            if not text.strip():
+                LOGGER.debug("Website %s yielded empty content; skipped", url)
+                continue
+
+            metadata = {
+                "id": generate_request_id(),
+                "source": url,
+                "file_name": url,
+                "file_type": "html",
+                "domain": ChatDomain.knowledge.value,
+                "ingested_at": datetime.now(timezone.utc).isoformat(),
+                "type": "web_fetch",
             }
             documents.append(Document(page_content=text, metadata=metadata))
         return documents

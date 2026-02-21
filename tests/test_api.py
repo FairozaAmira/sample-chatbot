@@ -62,7 +62,11 @@ def test_crawler_and_chatbot_flow(client: TestClient, tmp_path: Path) -> None:
     settings = get_settings()
     _seed_sample_documents(settings.data_directory)
 
-    crawl_payload = {"refresh_index": True, "max_qas_per_document": 1}
+    crawl_payload = {
+        "refresh_index": True,
+        "max_qas_per_document": 1,
+        "website_urls": ["https://example.com/mock"],
+    }
     crawl_response = client.post("/api/crawler", json=crawl_payload)
     assert crawl_response.status_code == 200
     crawl_body = crawl_response.json()
