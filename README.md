@@ -336,8 +336,7 @@ The container installs dependencies, bundles the application code, and starts Uv
 If you want open-source inference without GPT keys, run with Ollama mode enabled:
 
 ```bash
-docker run \
-  -it --rm \
+docker run -it --rm \
   -p 8000:8000 \
   -p 11434:11434 \
   --env-file .env \
