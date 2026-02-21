@@ -13,6 +13,10 @@ ENV POETRY_VIRTUALENVS_CREATE=false \
 
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --upgrade pip uv
 
 COPY pyproject.toml README.md ./

@@ -323,7 +323,7 @@ Build and run using the provided Dockerfile:
 
 ```bash
 docker build -t enterprise-chatbot .
-docker run -p 8000:8000 --env-file .env enterprise-chatbot
+docker run --enterprise-chatbot -it --rm -v "$(pwd):/app" -w /app -p 8000:8000 --env-file .env enterprise-chatbot:latest
 ```
 
 The container installs dependencies, bundles the application code, and starts Uvicorn on port 8000.

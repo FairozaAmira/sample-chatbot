@@ -18,6 +18,7 @@ dependencies = [
     "langchain-experimental==0.0.55",
     "langchain-openai==0.1.7",
     "chromadb==0.5.0",
+    "pysqlite3==0.5.3; platform_system == 'Linux'",
     "pydantic==2.6.4",
     "pydantic-settings==2.2.1",
     "python-dotenv==1.0.1",

@@ -2,10 +2,19 @@
 from __future__ import annotations
 
 import logging
+import sqlite3
+import sys
 from pathlib import Path
 from typing import Iterable, List
 
 from langchain.docstore.document import Document
+
+# Chroma requires sqlite >= 3.35. Some slim images ship older sqlite versions.
+if sqlite3.sqlite_version_info < (3, 35, 0):
+    import pysqlite3  # type: ignore[import-not-found]
+
+    sys.modules["sqlite3"] = pysqlite3
+
 from langchain_community.vectorstores import Chroma
 
 from .config import get_settings
