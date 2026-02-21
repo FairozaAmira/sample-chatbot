@@ -323,13 +323,19 @@ The container installs dependencies with `uv`, bundles the application code, and
 
 ---
 
-## Continuous Integration
+## Continuous Integration / Continuous Deployment
 
-The GitHub Actions workflow (`.github/workflows/ci.yml`) executes on pushes and pull requests to `main`:
+The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on:
+- Pushes and pull requests to any branch
+- Manual dispatch
+- Tags ending in `-uat` or `-prod` (trigger deployments)
 
-1. Sets up Python 3.10 and installs `uv`.
-2. Installs runtime plus dev dependencies via `uv pip install --system .[dev]`.
-3. Runs the pytest suite.
+### Jobs
+- **build-and-test**: Sets up Python 3.10, installs `uv`, installs dependencies, and runs pytest.
+- **deploy-uat**: Runs on tags like `0.0.1-uat`; builds Docker image and performs sample UAT deployment.
+- **deploy-prod**: Runs on tags like `0.0.1-prod`; builds Docker image and performs sample production deployment.
+
+Both deploy jobs reference GitHub environments (`uat`, `production`) for protection rules and secrets. Ensure these environments exist in the repository settings before tagging releases.
 
 ---
 

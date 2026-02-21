@@ -6,10 +6,11 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import List
 
-from langchain.chains import RetrievalQA
-from langchain.docstore.document import Document
-from langchain.prompts import PromptTemplate
-from langchain.schema import BaseRetriever
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.chains.llm import LLMChain
+from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate
+from langchain.chains.question_answering import load_qa_chain
 
 from .config import get_settings
 from .costs import estimate_cost
@@ -72,24 +73,20 @@ class RAGPipeline:
         self.settings = get_settings()
         self.llm = get_llm()
 
-    def _build_chain(self, domain: ChatDomain, top_k: int) -> RetrievalQA:
+    def _build_chain(self, domain: ChatDomain, top_k: int):
         vector_store = get_vector_store()
         retriever = DomainAwareRetriever(vector_store.as_retriever(search_kwargs={"k": top_k}), domain)
-        return RetrievalQA.from_chain_type(
-            llm=self.llm,
-            retriever=retriever,
-            chain_type="stuff",
-            chain_type_kwargs={"prompt": ANSWER_PROMPT},
-            return_source_documents=True,
-        )
+        qa_chain = load_qa_chain(self.llm, chain_type="stuff", prompt=ANSWER_PROMPT)
+        return qa_chain, retriever
 
     def answer(self, query: str, domain: ChatDomain, top_k: int) -> ChatbotResponse:
         with track_duration() as elapsed_ms:
-            chain = self._build_chain(domain, top_k)
-            LOGGER.info("Executing RAG chain for query: %s", query)
-            result = chain.invoke({"query": query})
-            answer: str = result.get("result", "No answer generated.")
-            documents: List[Document] = result.get("source_documents", [])[:top_k]
+            qa_chain, retriever = self._build_chain(domain, top_k)
+            LOGGER.info("Retrieving documents for query: %s", query)
+            documents = retriever.invoke(query)[:top_k]
+            LOGGER.info("Executing QA chain for query: %s", query)
+            result = qa_chain.invoke({"input_documents": documents, "question": query})
+            answer: str = result.get("output_text", "No answer generated.")
 
         citations = [
             Citation(
