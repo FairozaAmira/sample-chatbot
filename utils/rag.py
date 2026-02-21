@@ -46,8 +46,8 @@ class DomainAwareRetriever(BaseRetriever):
     """Retriever that filters documents by requested domain before returning results."""
 
     def __init__(self, base_retriever: BaseRetriever, domain: ChatDomain) -> None:
-        self._base_retriever = base_retriever
-        self._domain = domain
+        object.__setattr__(self, "_base_retriever", base_retriever)
+        object.__setattr__(self, "_domain", domain)
 
     def get_relevant_documents(self, query: str) -> List[Document]:  # type: ignore[override]
         candidates = self._base_retriever.get_relevant_documents(query)

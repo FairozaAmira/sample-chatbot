@@ -23,7 +23,7 @@ COPY routers ./routers
 COPY main.py ./main.py
 COPY tests ./tests
 
-RUN uv pip install --system .
+RUN uv pip install --system . --index-url https://download.pytorch.org/whl/cpu
 
 FROM python:3.10.11-slim AS runtime
 
