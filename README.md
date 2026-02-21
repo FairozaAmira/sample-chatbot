@@ -112,12 +112,17 @@ CHATBOT_APP_NAME="Enterprise RAG Chatbot"
 CHATBOT_APP_ENV="development"
 
 # LLM configuration
-CHATBOT_LLM_PROVIDER="placeholder" # placeholder | openai | ollama
-CHATBOT_LLM_API_KEY="sk-xxx"      # Required for openai provider
-CHATBOT_LLM_MODEL="gpt5-mini"     # e.g. gpt-4o-mini (openai) or llama3.2 (ollama)
+# Provider options: placeholder | openai | ollama
+CHATBOT_LLM_PROVIDER="placeholder"
+# Required only for openai provider
+CHATBOT_LLM_API_KEY="sk-xxx"
+# e.g. gpt-4o-mini (openai) or llama3.2 (ollama)
+CHATBOT_LLM_MODEL="gpt5-mini"
 CHATBOT_OLLAMA_BASE_URL="http://127.0.0.1:11434"
-CHATBOT_LLM_COST_PER_1K_TOKENS=0.002  # Optional cost estimation
-CHATBOT_ENABLE_DEEPEVAL=true          # Enable deepeval metrics when API key is present
+# Optional cost estimation
+CHATBOT_LLM_COST_PER_1K_TOKENS=0.002
+# Enable deepeval metrics when API key is present
+CHATBOT_ENABLE_DEEPEVAL=true
 
 # Storage locations (override if needed)
 CHATBOT_CHROMA_PERSIST_DIRECTORY=.chroma_store
@@ -323,7 +328,7 @@ Build and run using the provided Dockerfile:
 
 ```bash
 docker build -t enterprise-chatbot .
-docker run --enterprise-chatbot -it --rm -v "$(pwd):/app" -w /app -p 8000:8000 --env-file .env enterprise-chatbot:latest
+docker run -it --rm -p 8000:8000 --env-file .env enterprise-chatbot:latest
 ```
 
 The container installs dependencies, bundles the application code, and starts Uvicorn on port 8000.
@@ -332,13 +337,23 @@ If you want open-source inference without GPT keys, run with Ollama mode enabled
 
 ```bash
 docker run \
+  -it --rm \
   -p 8000:8000 \
   -p 11434:11434 \
+  --env-file .env \
   -e CHATBOT_LLM_PROVIDER=ollama \
   -e CHATBOT_LLM_MODEL=llama3.2 \
   -e CHATBOT_OLLAMA_BASE_URL=http://127.0.0.1:11434 \
-  enterprise-chatbot
+  enterprise-chatbot:latest
 ```
+
+If you need live code editing via bind mount, use:
+
+```bash
+docker run -it --rm -v "$(pwd):/app" -w /app -p 8000:8000 --env-file .env enterprise-chatbot:latest
+```
+
+> On Docker Desktop for macOS, bind mounts require the folder to be shared in Docker settings.
 
 In Ollama mode, container startup will:
 - start the local Ollama server,
