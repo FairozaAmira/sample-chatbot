@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "enterprise-chatbot"
+version = "0.1.0"
+description = "Enterprise-ready RAG chatbot with evaluation and data ingestion capabilities"
+authors = [{ name = "Fairoza Amira" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.109",
+    "uvicorn[standard]>=0.25",
+    "langchain>=0.1.0",
+    "langchain-community>=0.0.19",
+    "langchainhub>=0.1.15",
+    "langchain-experimental>=0.0.49",
+    "langchain-openai>=0.0.5",
+    "chromadb>=0.4.22",
+    "pydantic>=2.5",
+    "python-dotenv>=1.0",
+    "deepeval>=0.20.2",
+    "pandas>=2.1",
+    "numpy>=1.24",
+    "sentence-transformers>=2.2",
+    "pypdf>=3.9"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-asyncio>=0.21",
+    "httpx>=0.25"
+]
+
+[tool.uv]
+python-version = "3.10"
+dev-dependencies = [
+    "pytest>=7.4",
+    "pytest-asyncio>=0.21",
+    "httpx>=0.25"
+]
