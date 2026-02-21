@@ -23,7 +23,8 @@ def handle_crawl_request(payload: CrawlRequest) -> CrawlResponse:
     return CrawlResponse(
         id=generate_request_id(),
         created_at=datetime.now(timezone.utc),
-        processing_time_ms=elapsed_ms(),
+        time_taken_ms=elapsed_ms(),
+        api_cost=None,
         cost=CostBreakdown(),
         documents_indexed=summary.documents_indexed,
         qa_pairs_generated=summary.qa_pairs_generated,

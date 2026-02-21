@@ -68,6 +68,8 @@ def test_crawler_and_chatbot_flow(client: TestClient, tmp_path: Path) -> None:
     crawl_body = crawl_response.json()
     assert crawl_body["documents_indexed"] >= 2
     assert crawl_body["qa_pairs_generated"] >= 2
+    assert "timeTaken" in crawl_body
+    assert "apiCost" in crawl_body
 
     chatbot_payload = {"query": "What does policy A require?", "domain": "knowledge", "top_k": 3}
     chatbot_response = client.post("/api/chatbot", json=chatbot_payload)
@@ -75,6 +77,8 @@ def test_crawler_and_chatbot_flow(client: TestClient, tmp_path: Path) -> None:
     chatbot_body = chatbot_response.json()
     assert chatbot_body["answer"]
     assert isinstance(chatbot_body["citations"], list)
+    assert "timeTaken" in chatbot_body
+    assert "apiCost" in chatbot_body
 
 
 def test_evaluation_endpoint(client: TestClient) -> None:
@@ -88,3 +92,5 @@ def test_evaluation_endpoint(client: TestClient) -> None:
     body = response.json()
     assert body["average_score"] >= 0
     assert any(metric["metric"] == "ReferenceOverlap" for metric in body["metrics"])
+    assert "timeTaken" in body
+    assert "apiCost" in body

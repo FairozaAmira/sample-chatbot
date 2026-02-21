@@ -99,13 +99,19 @@ class RAGPipeline:
             )
             for doc in documents
         ]
-        cost_estimate = estimate_cost(query, answer, rate_per_1k=self.settings.llm_cost_per_1k_tokens)
+        cost_breakdown = CostBreakdown()
+        api_cost = None
+        if self.settings.llm_api_key:
+            estimate = estimate_cost(query, answer, rate_per_1k=self.settings.llm_cost_per_1k_tokens)
+            cost_breakdown = CostBreakdown(**estimate.__dict__)
+            api_cost = estimate.estimated_cost_usd
 
         response = ChatbotResponse(
             id=generate_request_id(),
             created_at=datetime.now(timezone.utc),
-            processing_time_ms=elapsed_ms(),
-            cost=CostBreakdown(**cost_estimate.__dict__),
+            time_taken_ms=elapsed_ms(),
+            api_cost=api_cost,
+            cost=cost_breakdown,
             answer=answer.strip(),
             citations=citations,
         )

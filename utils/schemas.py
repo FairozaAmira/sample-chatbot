@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class ChatDomain(str, Enum):
@@ -36,9 +36,20 @@ class CostBreakdown(BaseModel):
 class BaseAPIResponse(BaseModel):
     """Common metadata returned by all API endpoints."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     id: str = Field(..., description="Primary key identifier for the response")
     created_at: datetime = Field(..., description="UTC timestamp when the response was generated")
-    processing_time_ms: float = Field(..., description="Processing time in milliseconds")
+    time_taken_ms: float = Field(
+        ...,
+        alias="timeTaken",
+        description="Processing time in milliseconds",
+    )
+    api_cost: Optional[float] = Field(
+        default=None,
+        alias="apiCost",
+        description="Estimated USD cost billed by the LLM provider.",
+    )
     cost: CostBreakdown = Field(default_factory=CostBreakdown)
 
 
